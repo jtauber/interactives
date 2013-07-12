@@ -1,0 +1,125 @@
+<style>
+    #canvas { border: 1px solid #CCC; }
+</style>
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.js"></script>
+<canvas id="canvas" width="500" height="500"></canvas>
+
+<script type="text/javascript">
+    $(function() {
+        function distance(pos1, pos2) {
+            return Math.sqrt((pos2[0] - pos1[0]) * (pos2[0] - pos1[0]) + (pos2[1] - pos1[1]) * (pos2[1] - pos1[1]));
+        }
+        Canvas = function(selector, maxX, maxY, points) {
+            this.selector = selector;
+            this.maxX = maxX;
+            this.maxY = maxY;
+            this.points = points;
+            this.pointSelected = -1; // index into this.points or -1
+            this.position = $(this.selector).position();
+            this.ctx = $(selector)[0].getContext("2d");
+            this.ctx.translate(0, maxY);
+            this.ctx.scale(1, -1);
+        }
+        Canvas.prototype = {
+            
+            // drawing
+            
+            clear: function() {
+                this.ctx.clearRect(0, 0, this.maxX, this.maxY);
+            },
+            draw: function() {
+                this.clear();
+                this.drawLine(this.points[0], this.points[1], "rgb(204,204,204)");
+                this.drawLine(this.points[1], this.points[2], "rgb(204,204,204)");
+                this.drawLine(this.points[2], this.points[3], "rgb(204,204,204)");
+                this.drawBezierCurve(this.points[0], this.points[1], this.points[2], this.points[3], "rgb(0,0,0)");
+                this.drawDot(this.points[0], "rgb(0,0,0)");
+                this.drawDot(this.points[1], "rgb(153,153,153)");
+                this.drawDot(this.points[2], "rgb(153,153,153)");
+                this.drawDot(this.points[3], "rgb(0,0,0)");
+            },
+            
+            // component drawing
+            
+            drawDot: function(pos, style) {
+                // draw a dot at the given position with the given fill style
+                this.ctx.fillStyle = style;
+                this.ctx.beginPath();
+                this.ctx.arc(pos[0], pos[1], 4, 0, Math.PI*2, true);
+                this.ctx.fill();
+            },
+            drawLine: function(pos1, pos2, style) {
+                this.ctx.strokeStyle = style;
+                this.ctx.beginPath();
+                this.ctx.moveTo(pos1[0], pos1[1]);
+                this.ctx.lineTo(pos2[0], pos2[1]);
+                this.ctx.stroke();
+            },
+            drawCurve: function(pos1, pos2, pos3, style) {
+                this.ctx.strokeStyle = style;
+                this.ctx.beginPath();
+                this.ctx.moveTo(pos1[0], pos1[1]);
+                this.ctx.quadraticCurveTo(pos2[0], pos2[1], pos3[0], pos3[1]);
+                this.ctx.stroke();
+            },
+            drawBezierCurve: function(p1, p2, p3, p4, c) {
+                this.ctx.strokeStyle = c;
+                this.ctx.beginPath();
+                this.ctx.moveTo(p1[0], p1[1]);
+                this.ctx.bezierCurveTo(p2[0], p2[1], p3[0], p3[1], p4[0], p4[1]);
+                this.ctx.stroke();
+            },
+            
+            // utilities
+            
+            anyClose: function(pos) {
+                // returns -1 if none close or index in to this.points of close point
+                for (var i = 0; i < this.points.length; i++) {
+                    if (distance(pos, this.points[i]) < 5) return i;
+                }
+                return -1;
+            },
+            convertPosition: function(e) {
+                // translate the event to the canvas-relative position
+                return [e.pageX - this.position.left, this.maxY - e.pageY + this.position.top];
+            },
+            
+            // handlers
+            
+            handle_mousemove: function(e) {
+                var pos = this.convertPosition(e);
+                if (this.pointSelected != -1) {
+                    this.points[this.pointSelected] = pos;
+                    this.draw();
+                    this.drawDot(pos, "rgb(255,0,0)");
+                }
+                else {
+                    this.draw();
+                    var i = this.anyClose(pos);
+                    if (i != -1) this.drawDot(this.points[i], "rgb(255,102,102)");
+                }
+            },
+            handle_mousedown: function(e) {
+                var i = this.anyClose(this.convertPosition(e));
+                if (i != -1) {
+                    this.draw();
+                    this.drawDot(this.points[i], "rgb(255,128,128)");
+                    this.pointSelected = i;
+                }
+            },
+            handle_mouseup: function(e) {
+                this.draw();
+                this.pointSelected = -1;
+            },
+        }
+        myCanvas = new Canvas("#canvas", 500, 500, [[100, 100], [200, 400], [300, 100], [400, 250]]);
+        
+        // hook up event handlers
+        $("#canvas").mousemove(function(e) { myCanvas.handle_mousemove(e); });
+        $("#canvas").mousedown(function(e) { myCanvas.handle_mousedown(e); });
+        $("#canvas").mouseup(function(e) { myCanvas.handle_mouseup(e); });
+        
+        myCanvas.draw();
+    });
+</script>

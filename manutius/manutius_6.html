@@ -1,0 +1,253 @@
+<style>
+    #canvas { border: 1px solid #CCC; }
+</style>
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.js"></script>
+<canvas id="canvas" width="500" height="500"></canvas>
+
+<script type="text/javascript">
+    $(function() {
+        function distance(pos1, pos2) {
+            return Math.sqrt((pos2[0] - pos1[0]) * (pos2[0] - pos1[0]) + (pos2[1] - pos1[1]) * (pos2[1] - pos1[1]));
+        }
+        Canvas = function(selector, maxX, maxY, points) {
+            this.selector = selector;
+            this.maxX = maxX;
+            this.maxY = maxY;
+            this.points = points;
+            this.pointSelected = -1; // index into this.points or -1
+            this.position = $(this.selector).position();
+            this.ctx = $(selector)[0].getContext("2d");
+            this.ctx.translate(0, maxY);
+            this.ctx.scale(1, -1);
+        }
+        Canvas.prototype = {
+            
+            // drawing
+            
+            clear: function() {
+                this.ctx.clearRect(0, 0, this.maxX, this.maxY);
+            },
+            draw: function() {
+                this.clear();
+                this.drawLine(this.points[0], this.points[1], "rgb(204,204,204)");
+                this.drawLine(this.points[1], this.points[2], "rgb(204,204,204)");
+                this.drawLine(this.points[2], this.points[3], "rgb(204,204,204)");
+                this.drawBezierCurve(this.points[0], this.points[1], this.points[2], this.points[3], "rgb(0,0,0)");
+                this.drawDot(this.points[0], "rgb(0,0,0)");
+                this.drawDot(this.points[1], "rgb(153,153,153)");
+                this.drawDot(this.points[2], "rgb(153,153,153)");
+                this.drawDot(this.points[3], "rgb(0,0,0)");
+            },
+            
+            // component drawing
+            
+            drawDot: function(pos, style) {
+                // draw a dot at the given position with the given fill style
+                this.ctx.fillStyle = style;
+                this.ctx.beginPath();
+                this.ctx.arc(pos[0], pos[1], 4, 0, Math.PI*2, true);
+                this.ctx.fill();
+            },
+            drawLine: function(pos1, pos2, style) {
+                this.ctx.strokeStyle = style;
+                this.ctx.beginPath();
+                this.ctx.moveTo(pos1[0], pos1[1]);
+                this.ctx.lineTo(pos2[0], pos2[1]);
+                this.ctx.stroke();
+            },
+            drawCurve: function(pos1, pos2, pos3, style) {
+                this.ctx.strokeStyle = style;
+                this.ctx.beginPath();
+                this.ctx.moveTo(pos1[0], pos1[1]);
+                this.ctx.quadraticCurveTo(pos2[0], pos2[1], pos3[0], pos3[1]);
+                this.ctx.stroke();
+            },
+            drawBezierCurve: function(pos1, pos2, pos3, pos4, style) {
+                this.ctx.strokeStyle = style;
+                this.ctx.beginPath();
+                this.ctx.moveTo(pos1[0], pos1[1]);
+                this.ctx.bezierCurveTo(pos2[0], pos2[1], pos3[0], pos3[1], pos4[0], pos4[1]);
+                this.ctx.stroke();
+            },
+            drawVerticalGuide: function(x) {
+                this.drawLine([x, 0], [x, this.maxY], "rgba(102,102,255,0.5)");
+            },
+            drawHorizontalGuide: function(y) {
+                this.drawLine([0, y], [this.maxX, y], "rgba(102,102,255,0.5)");
+            },
+            drawVerticalGuide2: function(p1, p2) {
+                this.drawLine([0, p1[1]], [this.maxX, p1[1]], "rgba(204,255,204,0.5)");
+                this.drawLine([0, p2[1]], [this.maxX, p2[1]], "rgba(204,255,204,0.5)");
+                var a = (p1[0] + p2[0]) / 2;
+                this.drawLine([a, p1[1]], [a, p2[1]], "rgba(0,255,0, 1)");
+                var a1offset;
+                var a2offset;
+                if (p1[1] < p2[1]) {
+                    a1offset = 5;
+                    a2offset = -5;
+                } else {
+                    a1offset = -5;
+                    a2offset = 5;
+                }
+                this.drawLine([a, p1[1]], [a - 3, p1[1] + a1offset], "rgba(0,255,0, 1)");
+                this.drawLine([a, p1[1]], [a + 3, p1[1] + a1offset], "rgba(0,255,0, 1)");
+                this.drawLine([a, p2[1]], [a - 3, p2[1] + a2offset], "rgba(0,255,0, 1)");
+                this.drawLine([a, p2[1]], [a + 3, p2[1] + a2offset], "rgba(0,255,0, 1)");
+            },
+            drawHorizontalGuide2: function(p1, p2) {
+                this.drawLine([p1[0], 0], [p1[0], this.maxY], "rgba(204,255,204,0.5)");
+                this.drawLine([p2[0], 0], [p2[0], this.maxY], "rgba(204,255,204,0.5)");
+                var a = (p1[1] + p2[1]) / 2;
+                this.drawLine([p1[0], a], [p2[0], a], "rgba(0,255,0, 1)");
+                var a1offset;
+                var a2offset;
+                if (p1[0] < p2[0]) {
+                    a1offset = 5;
+                    a2offset = -5;
+                } else {
+                    a1offset = -5;
+                    a2offset = 5;
+                }
+                this.drawLine([p1[0], a], [p1[0] + a1offset, a - 3], "rgba(0,255,0, 1)");
+                this.drawLine([p1[0], a], [p1[0] + a1offset, a + 3], "rgba(0,255,0, 1)");
+                this.drawLine([p2[0], a], [p2[0] + a2offset, a - 3], "rgba(0,255,0, 1)");
+                this.drawLine([p2[0], a], [p2[0] + a2offset, a + 3], "rgba(0,255,0, 1)");
+            },
+            checkGuides: function() {
+                // iterate over the points looking for ones that align with
+                // the selected point
+                for (var i = 0; i < this.points.length; i++) {
+                    if (i == this.pointSelected) {
+                        // this is the selected point, so skip it
+                        continue;
+                    }
+                    var pos = this.points[i];
+                    var selectedPos = this.points[this.pointSelected];
+                    if (pos[0] == selectedPos[0]) {
+                        // vertical alignment
+                        this.drawVerticalGuide([pos[0]]);
+                        this.drawDot(pos, "rgb(102,102,255)");
+                    }
+                    if (pos[1] == selectedPos[1]) {
+                        // horizontal alignment
+                        this.drawHorizontalGuide(pos[1]);
+                        this.drawDot(pos, "rgb(102,102,255)");
+                    }
+                }
+            },
+            snap: function() {
+                for (var i = 0; i < this.points.length; i++) {
+                    if (i == this.pointSelected) {
+                        continue;
+                    }
+                    var p = this.points[i];
+                    if (Math.abs(this.points[this.pointSelected][0] - p[0]) < 5) {
+                        this.points[this.pointSelected][0] = p[0];
+                        this.draw();
+                    }
+                    if (Math.abs(this.points[this.pointSelected][1] - p[1]) < 5) {
+                        this.points[this.pointSelected][1] = p[1];
+                        this.draw();
+                    }
+                }
+            },
+            checkDistances: function() {
+                i = this.pointSelected;
+                for (var j = 0; j < this.points.length; j++) {
+                    if (i == j) continue;
+                    for (var k = 0; k < this.points.length; k++) {
+                        for (var l = k + 1; l < this.points.length; l++) {
+                            if (((i == k) && (j == l)) || ((i == l) && (j == k))) {
+                                continue;
+                            }
+                            pa1 = this.points[i];
+                            pa2 = this.points[j];
+                            pb1 = this.points[k];
+                            pb2 = this.points[l];
+                            if ((pa1[0] != pa2[0]) && (Math.abs(pa1[0] - pa2[0]) == Math.abs(pb1[0] - pb2[0]))) {
+                                if (((i == j) && (pa1[0] == pb1[0])) || ((i == k) && (pa2[0] == pb2[0])) ||
+                                    ((i == l) && (pa2[0] == pb1[0])) || ((j == k) && (pa1[0] == pb2[0])) ||
+                                    ((pa1[0] == pb2[0]) && (pa2[0] == pb1[0])) || ((pa1[0] == pb1[0]) && (pa2[0] == pb2[0]))) {
+                                } else {
+                                    this.drawHorizontalGuide2(pa1, pa2);
+                                    this.drawHorizontalGuide2(pb1, pb2);
+                                }
+                            }
+                            if ((pa1[1] != pa2[1]) && (Math.abs(pa1[1] - pa2[1]) == Math.abs(pb1[1] - pb2[1]))) {
+                                if (((i == k) && (pa2[1] == pb2[1])) || ((i == l) && (pa2[1] == pb1[1])) ||
+                                    ((j == k) && (pa1[1] == pb2[1])) || ((i == j) && (pa1[1] == pb1[1])) ||
+                                    ((pa1[1] == pb2[1]) && (pa2[1] == pb1[1])) || ((pa1[1] == pb1[1]) && (pa2[1] == pb2[1]))) {
+                                } else {
+                                    this.drawVerticalGuide2(pa1, pa2);
+                                    this.drawVerticalGuide2(pb1, pb2);
+                                }
+                            }
+                            if (distance(pa1, pa2) == distance(pb1, pb2)) {
+                                // TODO @@@
+                            }
+                        }
+                    }
+                }
+            },
+            
+            // utilities
+            
+            anyClose: function(pos) {
+                // returns -1 if none close or index in to this.points of close point
+                for (var i = 0; i < this.points.length; i++) {
+                    if (distance(pos, this.points[i]) < 5) return i;
+                }
+                return -1;
+            },
+            convertPosition: function(e) {
+                // translate the event to the canvas-relative position
+                return [e.pageX - this.position.left, this.maxY - e.pageY + this.position.top];
+            },
+            
+            // handlers
+            
+            handle_mousemove: function(e) {
+                var pos = this.convertPosition(e);
+                if (this.pointSelected != -1) {
+                    this.points[this.pointSelected] = pos;
+                    this.draw();
+                    this.snap();
+                    this.checkDistances();
+                    this.checkGuides();
+                    // need to re-set this as could have been snapped
+                    pos = this.points[this.pointSelected];
+                    this.drawDot(pos, "rgb(255,0,0)");
+                }
+                else {
+                    this.draw();
+                    var i = this.anyClose(pos);
+                    if (i != -1) this.drawDot(this.points[i], "rgb(255,102,102)");
+                }
+            },
+            handle_mousedown: function(e) {
+                var i = this.anyClose(this.convertPosition(e));
+                if (i != -1) {
+                    this.draw();
+                    this.pointSelected = i;
+                    this.snap();
+                    this.checkDistances();
+                    this.checkGuides();
+                    this.drawDot(this.points[i], "rgb(255,128,128)");
+                }
+            },
+            handle_mouseup: function(e) {
+                this.draw();
+                this.pointSelected = -1;
+            },
+        }
+        myCanvas = new Canvas("#canvas", 500, 500, [[100, 100], [200, 400], [300, 100], [400, 250]]);
+        
+        // hook up event handlers
+        $("#canvas").mousemove(function(e) { myCanvas.handle_mousemove(e); });
+        $("#canvas").mousedown(function(e) { myCanvas.handle_mousedown(e); });
+        $("#canvas").mouseup(function(e) { myCanvas.handle_mouseup(e); });
+        
+        myCanvas.draw();
+    });
+</script>

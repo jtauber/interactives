@@ -1,0 +1,227 @@
+<style>
+    #canvas { border: 1px solid #CCC; }
+</style>
+
+<script src="jquery-1.5.min.js"></script>
+<canvas id="canvas" width="800" height="800"></canvas>
+
+<script type="text/javascript">
+    $(function() {
+        function distance(pos1, pos2) {
+            return Math.sqrt((pos2[0] - pos1[0]) * (pos2[0] - pos1[0]) + (pos2[1] - pos1[1]) * (pos2[1] - pos1[1]));
+        }
+        Canvas = function(selector, maxX, maxY, segments) {
+            this.selector = selector;
+            this.maxX = maxX;
+            this.maxY = maxY;
+            this.segments = segments;
+            this.segmentSelected = -1; // index into this.segments or -1
+            this.pointSelected = -1; // index into this.segments[this.segmentSelected] or -1
+            this.yOffset = -50;
+            this.position = $(this.selector).position();
+            this.ctx = $(selector)[0].getContext("2d");
+            this.ctx.translate(0, maxY + this.yOffset);
+            this.ctx.scale(1, -1);
+        }
+        Canvas.prototype = {
+            
+            // drawing
+            
+            clear: function() {
+                this.ctx.clearRect(0, 0 + this.yOffset, this.maxX, this.maxY - this.yOffset);
+            },
+            draw: function() {
+                this.clear();
+                this.ctx.strokeStyle = "rgb(0,0,0)";
+                this.ctx.beginPath();
+                for (var i = 0; i < this.segments.length; i++) {
+                    var segment = this.segments[i];
+                    if (segment[0] == "moveto") {
+                        this.ctx.moveTo(segment[1][0], segment[1][1]);
+                    }
+                    else if (segment[0] == "lineto") {
+                        this.ctx.lineTo(segment[1][0], segment[1][1]);
+                    }
+                    else if (segment[0] == "quadraticto") {
+                        this.ctx.quadraticCurveTo(
+                            segment[1][0], segment[1][1],
+                            segment[2][0], segment[2][1]
+                        );
+                    }
+                    else if (segment[0] == "bezierto") {
+                        this.ctx.bezierCurveTo(
+                            segment[1][0], segment[1][1],
+                            segment[2][0], segment[2][1],
+                            segment[3][0], segment[3][1]
+                        );
+                    }
+                    else {
+                        alert("unknown segment type " + segment[0]);
+                    }
+                }
+                this.ctx.stroke();
+                this.ctx.fillStyle = "rgb(230,230,230)";
+                this.ctx.fill();
+                
+                for (var i = 0; i < this.segments.length; i++) {
+                    var segment = this.segments[i];
+                    var last_point;
+                    if (segment[0] == "moveto") {
+                        this.drawDot(segment[1], "rgb(0,0,0)");
+                        last_point = segment[1];
+                    }
+                    else if (segment[0] == "lineto") {
+                        this.drawDot(segment[1], "rgb(0,0,0)");
+                        last_point = segment[1];
+                    }
+                    else if (segment[0] == "quadraticto") {
+                        this.drawLine(last_point, segment[1], "rgb(204,204,204)");
+                        this.drawLine(segment[1], segment[2], "rgb(204,204,204)");
+                        this.drawDot(segment[1], "rgb(153,153,153)");
+                        this.drawDot(segment[2], "rgb(0,0,0)");
+                        last_point = segment[2];
+                    }
+                    else if (segment[0] == "bezierto") {
+                        this.drawLine(last_point, segment[1], "rgb(204,204,204)");
+                        this.drawLine(segment[1], segment[2], "rgb(204,204,204)");
+                        this.drawLine(segment[2], segment[3], "rgb(204,204,204)");
+                        this.drawDot(segment[1], "rgb(153,153,153)");
+                        this.drawDot(segment[2], "rgb(153,153,153)");
+                        this.drawDot(segment[3], "rgb(0,0,0)");
+                        last_point = segment[3];
+                    }
+                    else {
+                        alert("unknown segment type " + segment[0]);
+                    }
+                }
+            },
+            
+            // component drawing
+            
+            drawDot: function(pos, style) {
+                // draw a dot at the given position with the given fill style
+                this.ctx.fillStyle = style;
+                this.ctx.beginPath();
+                this.ctx.arc(pos[0], pos[1], 4, 0, Math.PI*2, true);
+                this.ctx.fill();
+            },
+            drawLine: function(pos1, pos2, style) {
+                this.ctx.strokeStyle = style;
+                this.ctx.beginPath();
+                this.ctx.moveTo(pos1[0], pos1[1]);
+                this.ctx.lineTo(pos2[0], pos2[1]);
+                this.ctx.stroke();
+            },
+            drawVerticalGuide: function(x) {
+                this.drawLine([x, 0 + this.yOffset], [x, this.maxY + this.yOffset], "rgba(102,102,255,0.5)");
+            },
+            drawHorizontalGuide: function(y) {
+                this.drawLine([0, y], [this.maxX, y], "rgba(102,102,255,0.5)");
+            },
+            checkGuides: function() {
+                for (var i = 0; i < this.segments.length; i++) {
+                    // iterate over the points in each segment looking for
+                    // ones that align with the selected point
+                    var segment = this.segments[i];
+                    for (var j = 1; j < segment.length; j++) {
+                        if ((i == this.segmentSelected) && (j == this.pointSelected)) {
+                            // this is the selected point, so skip it
+                            continue;
+                        }
+                        var pos = segment[j];
+                        if (pos[0] == this.segments[this.segmentSelected][this.pointSelected][0]) {
+                            this.drawVerticalGuide([pos[0]]);
+                            this.drawDot(pos, "rgb(102,102,255)");
+                        }
+                        if (pos[1] == this.segments[this.segmentSelected][this.pointSelected][1]) {
+                            this.drawHorizontalGuide(pos[1]);
+                            this.drawDot(pos, "rgb(102,102,255)");
+                        }
+                    }
+                }
+            },
+            snap: function() {
+                for (var i = 0; i < this.segments.length; i++) {
+                    var segment = this.segments[i];
+                    for (var j = 1; j < segment.length; j++) {
+                        if ((i == this.segmentSelected) && (j == this.pointSelected)) {
+                            continue;
+                        }
+                        var p = segment[j];
+                        if (Math.abs(this.segments[this.segmentSelected][this.pointSelected][0] - p[0]) < 5) {
+                            this.segments[this.segmentSelected][this.pointSelected][0] = p[0];
+                            this.draw();
+                        }
+                        if (Math.abs(this.segments[this.segmentSelected][this.pointSelected][1] - p[1]) < 5) {
+                            this.segments[this.segmentSelected][this.pointSelected][1] = p[1];
+                            this.draw();
+                        }
+                    }
+                }
+            },
+            
+            // utilities
+            
+            anyClose: function(pos) {
+                // returns -1 if none close or index in to this.points of close point
+                for (var i = 0; i < this.segments.length; i++) {
+                    var segment = this.segments[i];
+                    for (var j = 1; j < segment.length; j++) {
+                        if (distance(pos, segment[j]) < 5) return [i, j];
+                    }
+                }
+                return -1;
+            },
+            convertPosition: function(e) {
+                // translate the event to the canvas-relative position
+                return [e.pageX - this.position.left, this.maxY - e.pageY + this.position.top + this.yOffset];
+            },
+            
+            // handlers
+            
+            handle_mousemove: function(e) {
+                var pos = this.convertPosition(e);
+                if (this.segmentSelected != -1) {
+                    this.segments[this.segmentSelected][this.pointSelected] = pos;
+                    this.draw();
+                    this.snap();
+                    this.checkGuides();
+                    this.drawDot(this.segments[this.segmentSelected][this.pointSelected], "rgb(255,0,0)");
+                }
+                else {
+                    this.draw();
+                    var i = this.anyClose(pos);
+                    if (i != -1) this.drawDot(this.segments[i[0]][i[1]], "rgb(255,102,102)");
+                }
+            },
+            handle_mousedown: function(e) {
+                var i = this.anyClose(this.convertPosition(e));
+                if (i != -1) {
+                    this.draw();
+                    this.segmentSelected = i[0];
+                    this.pointSelected = i[1];
+                    this.snap();
+                    this.checkGuides();
+                    this.drawDot(this.segments[i[0]][i[1]], "rgb(255,128,128)");
+                }
+            },
+            handle_mouseup: function(e) {
+                this.draw();
+                this.segmentSelected = -1;
+                this.pointSelected = -1;
+            },
+        }
+        myCanvas = new Canvas("#canvas", 800, 800, [
+            ["moveto", [48, 396]],
+            ["moveto", [48, 341]]
+        ]);
+        
+        // hook up event handlers
+        
+        $("#canvas").mousemove(function(e) { myCanvas.handle_mousemove(e); });
+        $("#canvas").mousedown(function(e) { myCanvas.handle_mousedown(e); });
+        $("#canvas").mouseup(function(e) { myCanvas.handle_mouseup(e); });
+        
+        myCanvas.draw();
+    });
+</script>
