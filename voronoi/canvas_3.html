@@ -1,0 +1,121 @@
+<html>
+    <head>
+        <title>Voronoi Canvas Tutorial, Part III</title>
+    </head>
+    <body>
+        <h1>Voronoi Canvas Tutorial, Part III</h1>
+        
+        <p>See <a href="http://jtauber.com/blog/2008/11/29/voronoi_canvas_tutorial_part_iii/">the blog post</a> for details.</p>
+        
+        <canvas id="canvas" width="600" height="400" style="border: 1px solid #999;"></canvas>
+        <div><button id="clear-button">clear</button></div>
+        
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js"></script>
+        <script>
+            var points = [];
+            
+            /* calculate distance between (x1, y1) and (x2, y2) */
+            function distance(x1, y1, x2, y2) {
+                return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+            }
+            
+            /* are there any points close to (x, y) ? */
+            function anyClose(x, y) {
+                var result = false;
+                $.each(points, function() {
+                    if (distance(x, y, this[0], this[1]) < 20) {
+                        result = true;
+                        return false; // break out of each
+                    }
+                });
+                return result;
+            }
+            
+            var context = $('#canvas')[0].getContext('2d');
+            
+            function drawDot(x, y) {
+                context.fillStyle = "rgb(0,0,0)";
+                context.beginPath();
+                context.arc(x, y, 2, 0, Math.PI*2, true);
+                context.fill();
+            }
+            
+            function drawHorizontalLine(y) {
+                context.strokeStyle = "rgb(200,0,0)";
+                context.beginPath();
+                context.moveTo(0, y);
+                context.lineTo(600, y);
+                context.stroke();
+            }
+            
+            function redrawDots() {
+                $.each(points, function() {
+                    drawDot(this[0], this[1]);
+                })
+            }
+            
+            function drawParabolae(dy) {
+                $.each(points, function() {
+                    if (dy > this[1]) {
+                        drawParabola(this[0], this[1], dy);
+                    }
+                });
+            }
+            
+            function drawParabola(fx, fy, dy) {
+                var alpha = Math.sqrt((dy*dy)-(fy*fy));
+                var p0x = fx - alpha;
+                var p0y = 0;
+                var p1x = fx;
+                var p1y = fy + dy;
+                var p2x = fx + alpha;
+                var p2y = 0;
+                
+                context.strokeStyle = "rgb(100, 100, 100)";
+                context.fillStyle = "rgba(0, 0, 0, 0.05)";
+                context.beginPath();
+                context.moveTo(p0x, p0y);
+                context.quadraticCurveTo(p1x, p1y, p2x, p2y);
+                context.stroke();
+                context.fill();
+                
+                // vertex
+                // vx = fx;
+                // vy = (fy + dy) / 2;
+                // drawCircle(context, vx, vy, 2);
+            }
+            
+            $('#canvas').click(function(e) {
+                /* e will give us absolute x, y so we need to calculate relative to canvas position */
+                var pos = $('#canvas').position();
+                var ox = e.pageX - pos.left;
+                var oy = e.pageY - pos.top;
+                
+                /* only draw dot and add to points list if no other points are close */
+                if (!anyClose(ox, oy)) {
+                    drawDot(ox, oy);
+                    points.push([ox, oy]);
+                }
+                return false;
+            });
+            
+            $('#clear-button').click(function() {
+                points = [];
+                context.clearRect(0, 0, 600, 400);
+            });
+            
+            $('#canvas').mousemove(function(e) {
+                var pos = $('#canvas').position();
+                var ox = e.pageX - pos.left;
+                var oy = e.pageY - pos.top;
+                
+                context.clearRect(0, 0, 600, 400);
+                drawHorizontalLine(oy);
+                drawParabolae(oy);
+                redrawDots();
+            });
+            
+        </script>
+        
+    </body>
+</html>

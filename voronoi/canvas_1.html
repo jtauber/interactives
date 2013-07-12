@@ -1,0 +1,65 @@
+<html>
+    <head>
+        <title>Voronoi Canvas Tutorial, Part I</title>
+    </head>
+    <body>
+        <h1>Voronoi Canvas Tutorial, Part I</h1>
+        
+        <p>See <a href="http://jtauber.com/blog/2008/11/27/voronoi_canvas_tutorial_part_i/">the blog post</a> for details.</p>
+        
+        <canvas id="canvas" width="600" height="400" style="border: 1px solid #999;"></canvas>
+        <div><button id="clear-button">clear</button></div>
+        
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js"></script>
+        <script>
+            var points = [];
+            
+            /* calculate distance between (x1, y1) and (x2, y2) */
+            function distance(x1, y1, x2, y2) {
+                return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+            }
+            
+            /* are there any points close to (x, y) ? */
+            function anyClose(x, y) {
+                var result = false;
+                $.each(points, function() {
+                    if (distance(x, y, this[0], this[1]) < 20) {
+                        result = true;
+                        return false; // break out of each
+                    }
+                });
+                return result;
+            }
+            
+            var context = $('#canvas')[0].getContext('2d');
+            
+            function drawDot(x, y) {
+                context.fillStyle = "rgb(0,0,0)";
+                context.beginPath();
+                context.arc(x, y, 2, 0, Math.PI*2, true);
+                context.fill();
+            }
+            
+            
+            $('#canvas').click(function(e) {
+                /* e will give us absolute x, y so we need to calculate relative to canvas position */
+                var pos = $('#canvas').position();
+                var ox = e.pageX - pos.left;
+                var oy = e.pageY - pos.top;
+                
+                /* only draw dot and add to points list if no other points are close */
+                if (!anyClose(ox, oy)) {
+                    drawDot(ox, oy);
+                    points.push([ox, oy]);
+                }
+                return false;
+            });
+            
+            $('#clear-button').click(function() {
+                points = [];
+                context.clearRect(0, 0, 600, 400);
+            });
+        </script>
+        
+    </body>
+</html>
