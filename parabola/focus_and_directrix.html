@@ -2,6 +2,13 @@
     <head>
         <title>Focus and Directrix</title>
         <style>
+            body, h1 {
+                font-weight: 300;
+                font-family: "Helvetica Neue", sans-serif;
+            }
+            h1 span {
+                font-size: 60%;
+            }
             #canvas {
                 border: 1px solid #CCC;
             }
@@ -9,9 +16,12 @@
     </head>
     
     <body>
-        <h1>Focus and Directrix</h1>
+        <h1>Focus and Directrix <span>by James Tauber</span></h1>
+        <p>Click and drag the dots to move the focus and directrix.</p>
         
         <canvas id="canvas" width="500" height="500"></canvas>
+
+        <p><a href="https://github.com/jtauber/interactives/blob/master/parabola/focus_and_directrix.html">source</a></p>
         
         <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
         <script type="text/javascript">
