@@ -1,0 +1,183 @@
+<html>
+    <head>
+        <title>Focus and Directrix</title>
+        <style>
+            #canvas {
+                border: 1px solid #CCC;
+            }
+        </style>
+    </head>
+    
+    <body>
+        <h1>Focus and Directrix</h1>
+        
+        <canvas id="canvas" width="500" height="500"></canvas>
+        
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+        <script type="text/javascript">
+            $(function() {
+                function distance(pos1, pos2) {
+                    return Math.sqrt((pos2[0] - pos1[0]) * (pos2[0] - pos1[0]) + (pos2[1] - pos1[1]) * (pos2[1] - pos1[1]));
+                }
+                function midpoint(pos1, pos2) {
+                    return [
+                        (pos1[0] + pos2[0]) / 2,
+                        (pos1[1] + pos2[1]) / 2
+                    ]
+                }
+                Canvas = function(selector, maxX, maxY, points) {
+                    this.selector = selector;
+                    this.maxX = maxX;
+                    this.maxY = maxY;
+                    this.points = points;
+                    this.pointSelected = -1; // index into this.points or -1
+                    this.position = $(this.selector).position();
+                    this.ctx = $(selector)[0].getContext("2d");
+                    this.ctx.translate(0, maxY);
+                    this.ctx.scale(1, -1);
+                }
+                Canvas.prototype = {
+                    
+                    // drawing
+                    
+                    clear: function() {
+                        this.ctx.clearRect(0, 0, this.maxX, this.maxY);
+                    },
+                    draw: function() {
+                        this.clear();
+                        var A = this.points[0];
+                        var B = this.points[1];
+                        var C = this.points[2];
+                        
+                        var F = midpoint(A, C);
+                        var G = midpoint(B, C);
+                        
+                        var n = ((C[0] - A[0]) * (C[0] - A[0]) + (C[1] - A[1]) * (C[1] - A[1])) / (2 * ((B[0] - A[0]) * (C[1] - A[1]) - (B[1] - A[1]) * (C[0] - A[0])));
+                        var D = [A[0] - (B[1] - A[1]) * n, A[1] + (B[0] - A[0]) * n];
+                        
+                        n = ((C[0] - B[0]) * (C[0] - B[0]) + (C[1] - B[1]) * (C[1] - B[1])) / (2 * ((B[0] - A[0]) * (C[1] - B[1]) - (B[1] - A[1]) * (C[0] - B[0])));
+                        var E = [B[0] - (B[1] - A[1]) * n, B[1] + (B[0] - A[0]) * n];
+
+                        n = ((G[0] - F[0]) * (C[0] - A[0]) + (G[1] - F[1]) * (C[1] - A[1])) / ((C[1] - B[1]) * (C[0] - A[0]) - (C[0] - B[0]) * (C[1] - A[1]));
+                        H = [G[0] - (C[1] - B[1]) * n, G[1] + (C[0] - B[0]) * n];
+            
+                        this.drawLineSegment(A, C, "rgb(204,204,204)");
+                        this.drawLineSegment(B, C, "rgb(204,204,204)");
+
+                        this.drawLine(D, H, "rgb(224,224,224)");
+                        this.drawLine(E, H, "rgb(224,224,224)");
+                        this.drawLine(D, A, "rgb(224,224,224)");
+                        this.drawLine(E, B, "rgb(224,224,224)");
+
+                        // this.drawDot(D, "rgb(204,204,204)");
+                        // this.drawDot(E, "rgb(204,204,204)");
+                        
+                        // this.drawDot(F, "rgb(204,204,204)");
+                        // this.drawDot(G, "rgb(204,204,204)");
+                        // this.drawDot(H, "rgb(204,204,204)");
+                        
+                        this.drawLineSegment(A, B, "rgb(102,102,102)");
+                        
+                        this.drawQuadratricBezier(D, H, E, "rgb(0,0,0)");
+                        
+                        this.drawDot(A, "rgb(102,102,102)");
+                        this.drawDot(B, "rgb(102,102,102)");
+                        this.drawDot(C, "rgb(0,0,0)");
+                    },
+                    
+                    // component drawing
+                    
+                    drawDot: function(pos, style) {
+                        // draw a dot at the given position with the given fill style
+                        this.ctx.fillStyle = style;
+                        this.ctx.beginPath();
+                        this.ctx.arc(pos[0], pos[1], 4, 0, Math.PI*2, true);
+                        this.ctx.fill();
+                    },
+                    drawLine: function(pos1, pos2, style) {
+                        var dx = (pos2[0] - pos1[0]);
+                        var dy = (pos2[1] - pos1[1]);
+                        var ly = pos1[1] - (pos1[0] / dx) * dy;
+                        var ry = pos2[1] + ((this.maxX - pos2[0]) / dx) * dy;
+                        var tx = pos1[0] - (pos1[1] / dy) * dx;
+                        var bx = pos2[0] + ((this.maxY - pos2[1]) / dy) * dx;
+                        this.ctx.strokeStyle = style;
+                        this.ctx.beginPath();
+                        if ((0 <= ly) && (ly <= this.maxY)) {
+                            this.ctx.moveTo(0, ly);
+                            this.ctx.lineTo(this.maxX, ry);
+                        } else {
+                            this.ctx.moveTo(tx, 0);
+                            this.ctx.lineTo(bx, this.maxY);
+                        }
+                        this.ctx.stroke();
+                    },
+                    drawLineSegment: function(pos1, pos2, style) {
+                        this.ctx.strokeStyle = style;
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(pos1[0], pos1[1]);
+                        this.ctx.lineTo(pos2[0], pos2[1]);
+                        this.ctx.stroke();
+                    },
+                    drawQuadratricBezier:function(pos1, pos2, pos3, style) {
+                        this.ctx.strokeStyle = style;
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(pos1[0], pos1[1]);
+                        this.ctx.quadraticCurveTo(pos2[0], pos2[1], pos3[0], pos3[1]);
+                        this.ctx.stroke();
+                    },
+                    
+                    // utilities
+                    
+                    anyClose: function(pos) {
+                        // returns -1 if none close or index into this.points of close point
+                        for (var i = 0; i < this.points.length; i++) {
+                            if (distance(pos, this.points[i]) < 5) return i;
+                        }
+                        return -1;
+                    },
+                    convertPosition: function(e) {
+                        // translate the event to the canvas-relative position
+                        return [e.pageX - this.position.left, this.maxY - e.pageY + this.position.top];
+                    },
+                    
+                    // handlers
+                    
+                    handle_mousemove: function(e) {
+                        var pos = this.convertPosition(e);
+                        if (this.pointSelected != -1) {
+                            this.points[this.pointSelected] = pos;
+                            this.draw();
+                            this.drawDot(pos, "rgb(255,0,0)");
+                        }
+                        else {
+                            this.draw();
+                            var i = this.anyClose(pos);
+                            if (i != -1) this.drawDot(this.points[i], "rgb(255,102,102)");
+                        }
+                    },
+                    handle_mousedown: function(e) {
+                        var i = this.anyClose(this.convertPosition(e));
+                        if (i != -1) {
+                            this.draw();
+                            this.drawDot(this.points[i], "rgb(255,128,128)");
+                            this.pointSelected = i;
+                        }
+                    },
+                    handle_mouseup: function(e) {
+                        this.draw();
+                        this.pointSelected = -1;
+                    },
+                }
+                myCanvas = new Canvas("#canvas", 500, 500, [[100, 100], [300, 100], [200, 200]]);
+                
+                // hook up event handlers
+                $("#canvas").mousemove(function(e) { myCanvas.handle_mousemove(e); });
+                $("#canvas").mousedown(function(e) { myCanvas.handle_mousedown(e); });
+                $("#canvas").mouseup(function(e) { myCanvas.handle_mouseup(e); });
+                
+                myCanvas.draw();
+            });
+        </script>
+    </body>
+</html>
