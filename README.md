@@ -1,3 +1,4 @@
+[![Stories in Ready](http://badge.waffle.io/jtauber/interactives.png)](http://waffle.io/jtauber/interactives)  
 interactives
 ============
 
