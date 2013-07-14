@@ -150,6 +150,7 @@
                             this.points[this.pointSelected] = pos;
                             var c = this.points[2][1] / this.maxY;
                             var y = c + (1 - c) / 2;
+                            this.points[0][1] = (y * this.maxY + this.maxY) / 2;
                             this.points[1][1] = y * this.maxY;
                             this.points[2][0] = 100;
                             this.draw();
@@ -174,7 +175,7 @@
                         this.pointSelected = -1;
                     },
                 }
-                myCanvas = new Canvas("#canvas", 500, 500, [[300, 450], [250, 312.5], [100, 125]]);
+                myCanvas = new Canvas("#canvas", 500, 500, [[300, 406.25], [250, 312.5], [100, 125]]);
                 
                 // hook up event handlers
                 $("#canvas").mousemove(function(e) { myCanvas.handle_mousemove(e); });
