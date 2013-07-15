@@ -147,11 +147,21 @@
                     handle_mousemove: function(e) {
                         var pos = this.convertPosition(e);
                         if (this.pointSelected != -1) {
+                            var deltaX = this.points[0][0] - this.points[1][0];
+                            var s = slope(this.points[0], this.points[1]);
                             this.points[this.pointSelected] = pos;
                             var c = this.points[2][1] / this.maxY;
                             var y = c + (1 - c) / 2;
                             this.points[0][1] = (y * this.maxY + this.maxY) / 2;
                             this.points[1][1] = y * this.maxY;
+                            if (this.pointSelected == 2) {
+                                var deltaY = this.points[0][1] - this.points[1][1];
+                                var Ax = this.points[1][0] + (deltaY / s);
+                                this.points[0][0] = Ax;
+                            } else if (this.pointSelected == 1) {
+                                var Ax = this.points[1][0] + deltaX;
+                                this.points[0][0] = Ax;
+                            }
                             this.points[2][0] = 100;
                             this.draw();
                             this.drawDot(pos, "rgb(255,0,0)");
