@@ -53,7 +53,7 @@
                     clear: function() {
                         this.ctx.clearRect(0, 0, this.maxX, this.maxY);
                     },
-                    draw: function() {
+                    draw: function(drawControls) {
                         this.clear();
                         var A = this.points[0];
                         var B = this.points[1];
@@ -70,29 +70,30 @@
 
                         n = ((G[0] - F[0]) * (C[0] - A[0]) + (G[1] - F[1]) * (C[1] - A[1])) / ((C[1] - B[1]) * (C[0] - A[0]) - (C[0] - B[0]) * (C[1] - A[1]));
                         H = [G[0] - (C[1] - B[1]) * n, G[1] + (C[0] - B[0]) * n];
-            
-                        this.drawLineSegment(A, C, "rgb(204,204,204)");
-                        this.drawLineSegment(B, C, "rgb(204,204,204)");
+                        
+                        if (drawControls) {
+                            this.drawLineSegment(A, C, "rgb(204,204,204)");
+                            this.drawLineSegment(B, C, "rgb(204,204,204)");
 
-                        this.drawLine(D, H, "rgb(224,224,224)");
-                        this.drawLine(E, H, "rgb(224,224,224)");
-                        this.drawLine(D, A, "rgb(224,224,224)");
-                        this.drawLine(E, B, "rgb(224,224,224)");
+                            this.drawLine(D, H, "rgb(224,224,224)");
+                            this.drawLine(E, H, "rgb(224,224,224)");
+                            this.drawLine(D, A, "rgb(224,224,224)");
+                            this.drawLine(E, B, "rgb(224,224,224)");
 
-                        // this.drawDot(D, "rgb(204,204,204)");
-                        // this.drawDot(E, "rgb(204,204,204)");
-                        
-                        // this.drawDot(F, "rgb(204,204,204)");
-                        // this.drawDot(G, "rgb(204,204,204)");
-                        // this.drawDot(H, "rgb(204,204,204)");
-                        
-                        this.drawLineSegment(A, B, "rgb(102,102,102)");
-                        
+                            // this.drawDot(D, "rgb(204,204,204)");
+                            // this.drawDot(E, "rgb(204,204,204)");
+                            
+                            // this.drawDot(F, "rgb(204,204,204)");
+                            // this.drawDot(G, "rgb(204,204,204)");
+                            // this.drawDot(H, "rgb(204,204,204)");
+                            
+                            this.drawLineSegment(A, B, "rgb(102,102,102)");
+                            
+                            this.drawDot(A, "rgb(102,102,102)");
+                            this.drawDot(B, "rgb(102,102,102)");
+                            this.drawDot(C, "rgb(0,0,0)");
+                        }
                         this.drawQuadratricBezier(D, H, E, "rgb(0,0,0)");
-                        
-                        this.drawDot(A, "rgb(102,102,102)");
-                        this.drawDot(B, "rgb(102,102,102)");
-                        this.drawDot(C, "rgb(0,0,0)");
                     },
                     
                     // component drawing
@@ -157,11 +158,11 @@
                         var pos = this.convertPosition(e);
                         if (this.pointSelected != -1) {
                             this.points[this.pointSelected] = pos;
-                            this.draw();
+                            this.draw(true);
                             this.drawDot(pos, "rgb(255,0,0)");
                         }
                         else {
-                            this.draw();
+                            this.draw(true);
                             var i = this.anyClose(pos);
                             if (i != -1) this.drawDot(this.points[i], "rgb(255,102,102)");
                         }
@@ -169,13 +170,13 @@
                     handle_mousedown: function(e) {
                         var i = this.anyClose(this.convertPosition(e));
                         if (i != -1) {
-                            this.draw();
+                            this.draw(true);
                             this.drawDot(this.points[i], "rgb(255,128,128)");
                             this.pointSelected = i;
                         }
                     },
                     handle_mouseup: function(e) {
-                        this.draw();
+                        this.draw(true);
                         this.pointSelected = -1;
                     },
                 }
@@ -185,8 +186,15 @@
                 $("#canvas").mousemove(function(e) { myCanvas.handle_mousemove(e); });
                 $("#canvas").mousedown(function(e) { myCanvas.handle_mousedown(e); });
                 $("#canvas").mouseup(function(e) { myCanvas.handle_mouseup(e); });
-                
-                myCanvas.draw();
+                $("#canvas").hover(
+                    function(e) {
+                        myCanvas.draw(true);
+                    },
+                    function(e) {
+                        myCanvas.draw(false);
+                    }
+                )
+                myCanvas.draw(false);
             });
         </script>
     </body>
