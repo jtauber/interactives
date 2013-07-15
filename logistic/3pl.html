@@ -56,7 +56,7 @@
                     clear: function() {
                         this.ctx.clearRect(0, 0, this.maxX, this.maxY);
                     },
-                    draw: function() {
+                    draw: function(drawControls) {
                         this.clear();
                         var A = this.points[0];
                         var B = this.points[1];
@@ -64,14 +64,16 @@
                         var b = (B[0] / (this.maxX / 20)) - 10;
                         var c = this.points[2][1] / this.maxY;
                         var a = slope(A, B) / (5 * (1 - c));
-                        this.drawLine(B, [B[0], 0], "rgb(204,204,204)");
-                        this.drawLine(B, [0, B[1]], "rgb(204,204,204)");
-                        this.drawLine(C, [0, C[1]], "rgb(204,204,204)");
-                        this.drawLine(A, B, "rgb(153,153,153)");
+                        if (drawControls) {
+                            this.drawLine(B, [B[0], 0], "rgb(204,204,204)");
+                            this.drawLine(B, [0, B[1]], "rgb(204,204,204)");
+                            this.drawLine(C, [0, C[1]], "rgb(204,204,204)");
+                            this.drawLine(A, B, "rgb(153,153,153)");
+                            this.drawDot(this.points[0], "rgb(0,0,0)");
+                            this.drawDot(this.points[1], "rgb(0,0,0)");
+                            this.drawDot(this.points[2], "rgb(0,0,0)");
+                        }
                         this.draw3PL(a, b, c, "rgb(102,102,102)");
-                        this.drawDot(this.points[0], "rgb(0,0,0)");
-                        this.drawDot(this.points[1], "rgb(0,0,0)");
-                        this.drawDot(this.points[2], "rgb(0,0,0)");
                     },
                     
                     // component drawing
@@ -163,11 +165,11 @@
                                 this.points[0][0] = Ax;
                             }
                             this.points[2][0] = 100;
-                            this.draw();
+                            this.draw(true);
                             this.drawDot(pos, "rgb(255,0,0)");
                         }
                         else {
-                            this.draw();
+                            this.draw(true);
                             var i = this.anyClose(pos);
                             if (i != -1) this.drawDot(this.points[i], "rgb(255,102,102)");
                         }
@@ -175,13 +177,13 @@
                     handle_mousedown: function(e) {
                         var i = this.anyClose(this.convertPosition(e));
                         if (i != -1) {
-                            this.draw();
+                            this.draw(true);
                             this.drawDot(this.points[i], "rgb(255,128,128)");
                             this.pointSelected = i;
                         }
                     },
                     handle_mouseup: function(e) {
-                        this.draw();
+                        this.draw(true);
                         this.pointSelected = -1;
                     },
                 }
@@ -191,8 +193,15 @@
                 $("#canvas").mousemove(function(e) { myCanvas.handle_mousemove(e); });
                 $("#canvas").mousedown(function(e) { myCanvas.handle_mousedown(e); });
                 $("#canvas").mouseup(function(e) { myCanvas.handle_mouseup(e); });
-                
-                myCanvas.draw();
+                $("#canvas").hover(
+                    function(e) {
+                        myCanvas.draw(true);
+                    },
+                    function(e) {
+                        myCanvas.draw(false);
+                    }
+                )
+                myCanvas.draw(false);
             });
         </script>
     </body>
