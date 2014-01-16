@@ -1,0 +1,143 @@
+<html>
+    <head>
+        <title>Spherical Coordinates</title>
+        <style>
+            body, h1 {
+                font-weight: 300;
+                font-family: "Helvetica Neue", sans-serif;
+            }
+            h1 span {
+                font-size: 60%;
+            }
+            #canvas {
+                border: 1px solid #CCC;
+            }
+        </style>
+    </head>
+
+    <body>
+        <h1>Spherical Coordinates <span>by James Tauber</span></h1>
+        <p>Click and drag to rotate.</p>
+
+        <canvas id="canvas" width="500" height="500"></canvas>
+
+        <p><a href="https://github.com/jtauber/interactives/blob/master/master/spherical_coordinates.html">source</a></p>
+
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+        <script type="text/javascript">
+            $(function() {
+
+                function transform(x, y, z, rz, rx, ry) {
+                    return [
+                        ((x * Math.sin(rz) - y * Math.cos(rz)) * Math.sin(rx) + z * Math.cos(rx)) * Math.sin(ry) + (x * Math.cos(rz) - y * Math.sin(rz)) * Math.cos(ry),
+                        (x * Math.sin(rz) - y * Math.cos(rz)) * Math.cos(rx) - z * Math.sin(rx),
+                        ((x * Math.sin(rz) - y * Math.cos(rz)) * Math.sin(rx) + z * Math.cos(rx)) * Math.cos(ry) - (x * Math.cos(rz) - y * Math.sin(rz)) * Math.sin(ry)
+                    ]
+                }
+
+                Canvas = function(selector, maxX, maxY) {
+                    this.selector = selector;
+                    this.maxX = maxX;
+                    this.maxY = maxY;
+                    this.position = $(this.selector).position();
+                    this.ctx = $(selector)[0].getContext("2d");
+                    this.ctx.translate(maxX / 2, maxY / 2);
+                    this.ctx.scale(1, -1);
+                    this.alpha = Math.PI / 3;
+                    this.gamma = Math.PI / 3;
+                    this.radius = 200;
+
+                }
+                Canvas.prototype = {
+
+                    // drawing
+
+                    clear: function() {
+                        this.ctx.clearRect(-this.maxX, -this.maxY, 2 * this.maxX, 2 * this.maxY);
+                    },
+
+                    draw: function() {
+                        this.clear();
+
+                        this.ctx.fillStyle = "rgb(102,102,102)";
+                        this.drawEllipse(0, 0, 0, 1, 0, Math.PI / 2, 0, false);
+                        for (var latitude = 0; latitude < Math.PI / 2; latitude += Math.PI / 18) {
+                            this.drawEllipse(
+                                0, Math.sin(latitude), 0,
+                                Math.cos(latitude),
+                                0, this.alpha, this.gamma,
+                                true
+                            );
+                            this.drawEllipse(
+                                0, -Math.sin(latitude), 0,
+                                Math.cos(latitude),
+                                0, this.alpha, this.gamma,
+                                true
+                            );
+                        }
+                        for (var longitude=0 ; longitude < Math.PI; longitude += Math.PI / 18) {
+                            this.drawEllipse(
+                                0, 0, 0,
+                                1,
+                                longitude, Math.PI / 2 + this.alpha, this.gamma,
+                                true
+                            );
+                        }
+                    },
+
+                    // component drawing
+
+                    drawEllipse: function(ox, oy, oz, or, alpha, beta, gamma, hidden) {
+                        for (var theta=0; theta <=2 * Math.PI; theta += 0.02) {
+                            var px = ox + or * Math.cos(theta);
+                            var py = oy;
+                            var pz = oz + or * Math.sin(theta);
+
+                            var a = transform(px, py, pz, alpha, beta, gamma);
+
+                            if (!hidden || a[2] >= 0) {
+                                this.drawDot(this.radius * a[0], this.radius * a[1]);
+                            }
+                        }
+
+                    },
+
+                    drawDot: function(x, y) {
+                        this.ctx.fillRect(x, y, 1, 1);
+                    },
+
+                    convertPosition: function(e) {
+                        // translate the event to the canvas-relative position
+                        return [e.pageX - this.position.left, this.maxY - e.pageY + this.position.top];
+                    },
+
+                    // handlers
+
+                    handle_mousemove: function(e) {
+                        if (this.downPos) {
+                            var pos = this.convertPosition(e);
+                            // this isn't correct yet
+                            this.gamma += (pos[0] - this.downPos[0]) / 5000;
+                            this.alpha += (pos[1] - this.downPos[1]) / 5000;
+                            this.draw();
+                        }
+                    },
+                    handle_mousedown: function(e) {
+                        this.downPos = this.convertPosition(e);
+                    },
+                    handle_mouseup: function(e) {
+                        this.downPos = null;
+                    },
+
+                }
+                myCanvas = new Canvas("#canvas", 500, 500);
+
+                $("#canvas").mousemove(function(e) { myCanvas.handle_mousemove(e); });
+                $("#canvas").mousedown(function(e) { myCanvas.handle_mousedown(e); });
+                $("#canvas").mouseup(function(e) { myCanvas.handle_mouseup(e); });
+
+                myCanvas.draw();
+            });
+        </script>
+    </body>
+</html>
