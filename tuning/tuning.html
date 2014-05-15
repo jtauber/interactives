@@ -1,0 +1,281 @@
+<html>
+    <head>
+        <title>Tuning</title>
+        <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" />
+        <style>
+            #canvas {
+                border: 1px solid #CCC;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="container">
+            <h1>Tuning <small>by James Tauber</small></h1>
+
+            <div class="row">
+                <div class="col-md-9">
+                    <canvas id="canvas" width="800" height="800"></canvas>
+                </div>
+                <div class="col-md-3">
+                    <div class="well">
+                        <p>
+                            <button class="toggle btn btn-default btn-xs" data-toggle="show-12-ET">12-ET</button>
+                            <button class="toggle btn btn-default btn-xs" data-toggle="show-19-ET">19-ET</button>
+                        </p>
+                        <p>
+                            <button class="toggle btn btn-default btn-xs" data-toggle="show-pythagorean">Pythagorean</button>
+                            <button class="toggle btn btn-default btn-xs" data-toggle="show-JI">Just Intonation</button>
+                        </p>
+                        <p>
+                            <button class="toggle btn btn-default btn-xs" data-toggle="show-harmonics">Harmonics</button>
+                            <button class="toggle btn btn-default btn-xs" data-toggle="show-letters">Letters</button>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <p><a href="https://github.com/jtauber/interactives/blob/master/master/tuning/tuning.html">source</a></p>
+        </div>
+
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+        <script type="text/javascript">
+            $(function() {
+
+                toggles = {
+                    "show-12-ET": false,
+                    "show-19-ET": false,
+                    "show-JI": false,
+                    "show-pythagorean": false,
+                    "show-harmonics": false,
+                    "show-letters": false
+                }
+
+                I = 8;
+                J = 2;
+                S = 40;
+                C = 2;
+                N = Math.pow(J, I) / C;
+
+                Canvas = function(selector, maxX, maxY) {
+                    this.selector = selector;
+                    this.maxX = maxX;
+                    this.maxY = maxY;
+                    this.position = $(this.selector).position();
+                    this.ctx = $(selector)[0].getContext("2d");
+                    this.ctx.translate(maxX / 2, maxY / 2);
+                }
+                Canvas.prototype = {
+
+                    clear: function() {
+                        this.ctx.clearRect(-this.maxX, -this.maxY, 2 * this.maxX, 2 * this.maxY);
+                    },
+
+                    draw: function() {
+
+                        this.clear();
+                        if (toggles["show-letters"]) this.drawLetters();
+                        if (toggles["show-12-ET"]) this.drawET(12, "rgb(153,204,153)");
+                        if (toggles["show-19-ET"]) this.drawET(19, "rgb(153,204,204)");
+                        if (toggles["show-JI"]) this.drawJI("rgb(204,153,204)");
+                        if (toggles["show-pythagorean"]) this.drawPythagorean("rgb(153,153,204)");
+                        this.drawSpiral();
+                        if (toggles["show-harmonics"]) this.drawHarmonics();
+                    },
+
+                    drawSpiral: function() {
+                        this.ctx.strokeStyle = "rgb(153,153,255)";
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(0, r);
+                        for (var n=1; n <= I; n += 0.01) {
+                            var i = n;
+                            var theta = 2 * Math.PI * i;
+                            var r = i * S;
+                            var x = r * Math.sin(theta);
+                            var y = r * Math.cos(theta);
+                            this.ctx.lineTo(x, y);
+                        }
+                        this.ctx.stroke();
+                    },
+
+                    drawLetters: function() {
+                        this.drawLetter("C", 0);
+                        this.drawLetter("D", 2/12);
+                        this.drawLetter("E", 4/12);
+                        this.drawLetter("F", 5/12);
+                        this.drawLetter("G", 7/12);
+                        this.drawLetter("A", 9/12);
+                        this.drawLetter("B", 11/12);
+                    },
+                    drawLetter: function(letter, a) {
+                        var theta = 2 * Math.PI * a;
+                        var r = 380;
+                        var x = r * Math.sin(theta);
+                        var y = r * Math.cos(theta);
+                        this.ctx.fillStyle = "rgb(204,204,204)";
+                        this.ctx.font = "Bold 32pt Helvetica Neue, sans-serif";
+                        this.ctx.textAlign = "center";
+                        this.ctx.fillText(letter, x, y + 16);
+                    },
+
+                    drawHarmonics: function() {
+                        for (var m=1; m <= N; m += 1) {
+                            this.drawHarmonic(m, 1);
+                        }
+                        this.drawHarmonic(4, 3);
+                        this.drawHarmonic(5, 3);
+                    },
+                    drawHarmonic: function(n, d) {
+                        var m = n / d;
+                        var i = (Math.log(C * m) / Math.log(J));
+                        var theta = 2 * Math.PI * i;
+                        var r = i * S;
+                        var x = r * Math.sin(theta);
+                        var y = r * Math.cos(theta);
+                        if ((Math.floor(m/J) == m/J) && (m != J)) {
+                            this.drawCircle(x, y, 3, "rgb(255,153,153)");
+                        } else {
+                            this.drawCircle(x, y, 3, "rgb(255,51,51)");
+                            this.ctx.fillStyle = "rgb(51,51,51)";
+                            this.ctx.font="10pt Helvetica Neue, sans-serif";
+                            this.ctx.textAlign="left";
+                            var text;
+                            if (d == 1) {
+                                text = n;
+                            }
+                            else {
+                                text = n + "/" + d;
+                            }
+                            this.ctx.fillText(text, x + 3, y - 5);
+                        }
+                    },
+                    testHarmonic: function(pos, m) {
+                        var i = (Math.log(C * m) / Math.log(J));
+                        var theta = 2 * Math.PI * i;
+                        var r = i * S;
+                        var x = r * Math.sin(theta);
+                        var y = r * Math.cos(theta);
+                        if ((Math.abs(pos[0] - x) + Math.abs(pos[1] - y)) < 10) {
+                            var r2 = Math.sqrt(2) * 400;
+                            var x2 = r2 * Math.sin(theta);
+                            var y2 = r2 * Math.cos(theta);
+                            this.drawLine(0, 0, x2, y2, "rgb(255,153,153)");
+                        }
+                    },
+
+                    drawET: function(K, style) {
+                        for (var k=0; k < K; k += 1) {
+                            var i = k / K;
+                            var theta = 2 * Math.PI * i;
+                            var r = Math.sqrt(2) * 400;
+                            var x = r * Math.sin(theta);
+                            var y = r * Math.cos(theta);
+                            this.drawLine(0, 0, x, y, style);
+                        }
+                    },
+
+                    drawJI: function(style) {
+                        var f = [1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8];
+                        for (var i=0; i < f.length; i += 1) {
+                            var j = (Math.log(f[i]) / Math.log(J));
+                            var theta = 2 * Math.PI * j;
+                            var r = Math.sqrt(2) * 400;
+                            var x = r * Math.sin(theta);
+                            var y = r * Math.cos(theta);
+                            this.drawLine(0, 0, x, y, style);
+                        }
+                    },
+
+                    drawPythagorean: function(style) {
+                        for (var i=-6; i <= 6; i += 1) {
+                            var j = (Math.log(Math.pow(3, i) / Math.pow(2, i)) / Math.log(J));
+                            var theta = 2 * Math.PI * j;
+                            var r = Math.sqrt(2) * 400;
+                            var x = r * Math.sin(theta);
+                            var y = r * Math.cos(theta);
+                            this.drawLine(0, 0, x, y, style);
+                            var r2 = 340;
+                            var x2 = r2 * Math.sin(theta);
+                            var y2 = r2 * Math.cos(theta);
+                            this.clearCircle(x2, y2, 16);
+                            this.ctx.fillStyle = "rgb(51,51,51)";
+                            this.ctx.font="16pt Helvetica Neue, sans-serif";
+                            this.ctx.textAlign="center";
+                            this.ctx.fillText(i, x2, y2 + 8);
+                        }
+                    },
+
+                    // component drawing
+
+                    drawDot: function(x, y) {
+                        this.ctx.fillRect(x, y, 1, 1);
+                    },
+
+                    drawLine: function(x1, y1, x2, y2, style) {
+                        this.ctx.strokeStyle = style;
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(x1, y1);
+                        this.ctx.lineTo(x2, y2);
+                        this.ctx.stroke();
+                    },
+
+                    drawCircle: function(pos1, pos2, radius, style) {
+                        this.ctx.strokeStyle = style;
+                        this.ctx.beginPath();
+                        this.ctx.arc(pos1, pos2, radius, 0, 2 * Math.PI, true);
+                        this.ctx.stroke();
+                    },
+                    clearCircle: function(pos1, pos2, radius) {
+                        this.ctx.fillStyle = "rgb(255,255,255)";
+                        this.ctx.beginPath();
+                        this.ctx.arc(pos1, pos2, radius, 0, 2 * Math.PI, true);
+                        this.ctx.fill();
+                    },
+
+                    drawEllipse: function(pos1, pos2, radius1, radius2, angle, style) {
+                        this.ctx.strokeStyle = style;
+                        this.ctx.save();
+                        this.ctx.beginPath();
+                        this.ctx.translate(pos1, pos2);
+                        this.ctx.rotate(angle);
+                        this.ctx.scale(radius1, radius2);
+                        this.ctx.arc(0, 0, 1, 0, 2* Math.PI, false);
+                        this.ctx.restore();
+                        this.ctx.stroke();
+                    },
+                    convertPosition: function(e) {
+                        var rect = canvas.getBoundingClientRect();
+                        return [e.clientX - rect.left - this.maxX / 2, e.clientY - rect.top - this.maxY / 2];
+                    },
+
+                    // handlers
+
+                    handle_mousemove: function(e) {
+                        if (toggles["show-harmonics"]) {
+                            this.draw();
+                            var pos = this.convertPosition(e);
+                            for (var m = 1; m <= N; m += 1) {
+                                this.testHarmonic(pos, m);
+                            }
+                            this.testHarmonic(pos, 4/3);
+                            this.testHarmonic(pos, 5/3);
+                        }
+                    }
+                }
+                myCanvas = new Canvas("#canvas", 800, 800);
+
+                $("#canvas").mousemove(function(e) {
+                    myCanvas.handle_mousemove(e);
+                });
+
+                myCanvas.draw();
+
+                $(".toggle").click(function() {
+                    var field = $(this).data("toggle");
+                    toggles[field] = !toggles[field];
+                    $(this).toggleClass("active", toggles[field]);
+                    myCanvas.draw();
+                });
+            });
+        </script>
+    </body>
+</html>
