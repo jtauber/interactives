@@ -21,7 +21,9 @@
                     <div class="well">
                         <p>
                             <button class="toggle btn btn-default btn-xs" data-toggle="show-12-ET">12-ET</button>
+                            <button class="toggle btn btn-default btn-xs" data-toggle="show-17-ET">17-ET</button>
                             <button class="toggle btn btn-default btn-xs" data-toggle="show-19-ET">19-ET</button>
+                            <button class="toggle btn btn-default btn-xs" data-toggle="show-53-ET">53-ET</button>
                         </p>
                         <p>
                             <button class="toggle btn btn-default btn-xs" data-toggle="show-pythagorean">Pythagorean</button>
@@ -37,13 +39,15 @@
             <p><a href="https://github.com/jtauber/interactives/blob/master/tuning/tuning.html">source</a></p>
         </div>
 
-        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
         <script type="text/javascript">
             $(function() {
 
                 toggles = {
                     "show-12-ET": false,
+                    "show-17-ET": false,
                     "show-19-ET": false,
+                    "show-53-ET": false,
                     "show-JI": false,
                     "show-pythagorean": false,
                     "show-harmonics": false,
@@ -75,7 +79,9 @@
                         this.clear();
                         if (toggles["show-letters"]) this.drawLetters();
                         if (toggles["show-12-ET"]) this.drawET(12, "rgb(153,204,153)");
+                        if (toggles["show-17-ET"]) this.drawET(17, "rgb(153,204,204)");
                         if (toggles["show-19-ET"]) this.drawET(19, "rgb(153,204,204)");
+                        if (toggles["show-53-ET"]) this.drawET(53, "rgb(153,204,204)");
                         if (toggles["show-JI"]) this.drawJI("rgb(204,153,204)");
                         if (toggles["show-pythagorean"]) this.drawPythagorean("rgb(153,153,204)");
                         this.drawSpiral();
